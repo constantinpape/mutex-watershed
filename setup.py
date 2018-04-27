@@ -40,14 +40,15 @@ class get_numpy_include(object):
 ext_modules = [
     Extension(
         'mutex_watershed',
-        ['src/main.cpp'],
+        ['src/mws.cxx'],
         include_dirs=[
             # Path to pybind11 headers
             get_pybind_include(),
             get_pybind_include(user=True),
             get_numpy_include(),
             os.path.join(sys.prefix, 'include'),
-            os.path.join(sys.prefix, 'Library', 'include')
+            os.path.join(sys.prefix, 'Library', 'include'),
+            'include'
         ],
         language='c++'
     ),

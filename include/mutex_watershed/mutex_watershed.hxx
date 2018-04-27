@@ -1,5 +1,6 @@
 #pragma once
-#include "nifty/xtensor/xtensor.hxx"
+#include <boost/pending/disjoint_sets.hpp>
+#include "xtensor/xtensor.hpp"
 
 
 // TODO replace nifty ufd with boost union find
@@ -19,7 +20,7 @@ namespace mutex_watershed {
         // we check for all representatives of mutex edges if
         // they are the same as the reperesentative of v
         for(const auto mu : mutex_u) {
-            if(ufd.find(mu) == rv) {
+            if(ufd.find_set(mu) == rv) {
                 have_mutex = true;
                 break;
             }
@@ -48,7 +49,7 @@ namespace mutex_watershed {
             // iterate over all current mutexes
             auto mutex_it = mutex_u.begin();
             while(mutex_it != mutex_u.end()) {
-                const uint32_t rm = ufd.find(*mutex_it);
+                const uint32_t rm = ufd.find_set(*mutex_it);
 
                 // check if this mutex is already present in the list
                 // if it is not, insert it, otherwise delete this mutex
@@ -75,19 +76,20 @@ namespace mutex_watershed {
 
 
     template<class UFD>
-    inline void merge_mutexes(const uint32_t u, const uint32_t v, UFD & ufd, MutexStorage & mutexes) {
+    inline void merge_mutexes(const uint32_t u, const uint32_t v,
+                              UFD & ufd, MutexStorage & mutexes) {
         auto & mutex_u = mutexes[u];
         auto & mutex_v = mutexes[v];
 
         // extract all representatives (which should be unique here)
         std::unordered_map<uint32_t, uint32_t> mutex_reps_u;
         for(const auto mu : mutex_u) {
-            mutex_reps_u[ufd.find(mu)] = mu;
+            mutex_reps_u[ufd.find_set(mu)] = mu;
         }
 
         std::unordered_map<uint32_t, uint32_t> mutex_reps_v;
         for(const auto mv : mutex_v) {
-            mutex_reps_v[ufd.find(mv)] = mv;
+            mutex_reps_v[ufd.find_set(mv)] = mv;
         }
 
         // merge u into v
@@ -108,7 +110,7 @@ namespace mutex_watershed {
 
 
     template<class EDGE_ARRAY, class WEIGHT_ARRAY, class NODE_ARRAY>
-    void compute_mws_clustering(const uint32_t number_of_labels,
+    void compute_mws_clustering(const size_t number_of_labels,
                                 const xt::xexpression<EDGE_ARRAY> & uvs_exp,
                                 const xt::xexpression<EDGE_ARRAY> & mutex_uvs_exp,
                                 const xt::xexpression<WEIGHT_ARRAY> & weights_exp,
@@ -123,14 +125,19 @@ namespace mutex_watershed {
         auto & node_labeling = node_labeling_exp.derived_cast();
 
         // make ufd
-        ufd::Ufd<uint32_t> ufd(number_of_labels);
+        std::vector<uint64_t> ranks(number_of_labels);
+        std::vector<uint64_t> parents(number_of_labels);
+        boost::disjoint_sets<uint64_t*, uint64_t*> ufd(&ranks[0], &parents[0]);
+        for(uint64_t label = 0; label < number_of_labels; ++label) {
+            ufd.make_set(label);
+        }
 
         // determine number of edge types
         const size_t num_edges = uvs.shape()[0];
         const size_t num_mutex = mutex_uvs.shape()[0];
 
         // argsort ALL edges
-        // we sort in ascending order (TODO is this correct ?)
+        // we sort in ascending order
         std::vector<size_t> indices(num_edges + num_mutex);
         std::iota(indices.begin(), indices.end(), 0);
         std::sort(indices.begin(), indices.end(), [&](const size_t a, const size_t b){
@@ -154,8 +161,8 @@ namespace mutex_watershed {
                 const uint32_t v = mutex_uvs(mutex_id, 1);
 
                 // find the current representatives
-                const uint32_t ru = ufd.find(u);
-                const uint32_t rv = ufd.find(v);
+                const uint32_t ru = ufd.find_set(u);
+                const uint32_t rv = ufd.find_set(v);
 
                 // if the nodes are already connected, do nothing
                 if(ru == rv) {
@@ -173,8 +180,8 @@ namespace mutex_watershed {
                 const uint32_t v = uvs(edge_id, 1);
 
                 // find the current representatives
-                const uint32_t ru = ufd.find(u);
-                const uint32_t rv = ufd.find(v);
+                const uint32_t ru = ufd.find_set(u);
+                const uint32_t rv = ufd.find_set(v);
 
                 // if the nodes are already connected, do nothing
                 if(ru == rv) {
@@ -187,7 +194,7 @@ namespace mutex_watershed {
 
                 // only merge if we don't have a mutex
                 if(!have_mutex) {
-                    ufd.merge(u, v);
+                    ufd.link(u, v);
                     merge_mutexes(u, v, ufd, mutexes);
                 }
 
@@ -195,6 +202,8 @@ namespace mutex_watershed {
         }
 
         // get node labeling into output
-        ufd.elementLabeling(node_labeling.begin());
+        for(size_t label = 0; label < number_of_labels; ++label) {
+            node_labeling[label] = ufd.find_set(label);
+        }
     }
 }
