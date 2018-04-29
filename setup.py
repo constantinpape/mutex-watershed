@@ -39,7 +39,7 @@ class get_numpy_include(object):
 
 ext_modules = [
     Extension(
-        'mutex_watershed',
+        'mutex_watershed.mws',
         ['src/mws.cxx'],
         include_dirs=[
             # Path to pybind11 headers
@@ -103,16 +103,18 @@ class BuildExt(build_ext):
             ext.extra_compile_args = opts
         build_ext.build_extensions(self)
 
-setup(
-    name='mutex_watershed',
-    version=__version__,
-    author='Constantin Pape, Steffen Wolf',
-    author_email='constantin.pape@iwr.uni-heidelberg.de',
-    url='https://github.com/hci-unihd/mutex-watershed',
-    description= 'The Mutex Watershed for image segmentation',
-    long_description='',
-    ext_modules=ext_modules,
-    install_requires=['pybind11>=2.0.1', 'numpy'],
-    cmdclass={'build_ext': BuildExt},
-    zip_safe=False,
-)
+
+package_name = 'mutex_watershed'
+setup(name=package_name,
+      version=__version__,
+      author='Constantin Pape, Steffen Wolf',
+      author_email='constantin.pape@iwr.uni-heidelberg.de',
+      url='https://github.com/hci-unihd/mutex-watershed',
+      description='The Mutex Watershed for image segmentation',
+      long_description='',
+      packages=[package_name],
+      ext_packages='mutex_watershed.mws',
+      ext_modules=ext_modules,
+      install_requires=['pybind11>=2.0.1', 'numpy'],
+      cmdclass={'build_ext': BuildExt},
+      zip_safe=False)

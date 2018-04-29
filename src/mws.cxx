@@ -39,7 +39,7 @@ namespace mutex_watershed {
 }
 
 
-PYBIND11_MODULE(mutex_watershed, m)
+PYBIND11_MODULE(mws, m)
 {
     xt::import_numpy();
 
@@ -50,9 +50,9 @@ PYBIND11_MODULE(mutex_watershed, m)
 
         .. autosummary::
            :toctree: _generate
-           
+
            compute_mws_clustering
     )pbdoc";
-    
+
     mutex_watershed::export_mws_clustering(m);
 }
