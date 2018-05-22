@@ -1,4 +1,5 @@
 #include "pybind11/pybind11.h"
+#include "pybind11/stl.h"
 
 #include "xtensor/xmath.hpp"
 #include "xtensor/xarray.hpp"
@@ -43,7 +44,8 @@ namespace mutex_watershed {
             int64_t n_channels = offsets.size();
             int64_t sx = boundaries.shape()[0];
             int64_t sy = boundaries.shape()[1];
-            xt::pytensor<float, 3> affinities = xt::zeros<float>({n_channels, sx, sy});
+            int64_t n_feats = 9;
+            xt::pytensor<float, 4> affinities = xt::zeros<float>({n_feats, n_channels, sx, sy});
             {
                 py::gil_scoped_release allowThreads;
                 boundaries_to_affinities_2d(boundaries, offsets, affinities);
