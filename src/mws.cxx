@@ -11,6 +11,7 @@
 #include <cmath>
 
 #include "mutex_watershed/mutex_watershed.hxx"
+#include "mutex_watershed/boundaries_to_affinities.hxx"
 
 namespace py = pybind11;
 
@@ -36,6 +37,22 @@ namespace mutex_watershed {
     }
 
 
+    void export_boundaries_to_affinities(py::module & m) {
+        m.def("boundaries_to_affinities_2d",[](const xt::pytensor<float, 2> & boundaries,
+                                               const std::vector<std::array<int, 2>> & offsets){
+            int64_t n_channels = offsets.size();
+            int64_t sx = boundaries.shape()[0];
+            int64_t sy = boundaries.shape()[1];
+            xt::pytensor<float, 3> affinities = xt::zeros<float>({n_channels, sx, sy});
+            {
+                py::gil_scoped_release allowThreads;
+                boundaries_to_affinities_2d(boundaries, offsets, affinities);
+            }
+            return affinities;
+        }, py::arg("boundaries"), py::arg("offsets"));
+    }
+
+
 }
 
 
@@ -55,4 +72,5 @@ PYBIND11_MODULE(mws, m)
     )pbdoc";
 
     mutex_watershed::export_mws_clustering(m);
+    mutex_watershed::export_boundaries_to_affinities(m);
 }

@@ -3,7 +3,6 @@
 #include "xtensor/xtensor.hpp"
 
 
-// TODO replace nifty ufd with boost union find
 namespace mutex_watershed {
 
     // the datastructure to hold the mutex edges for a single cluster and all clusters
