@@ -57,7 +57,7 @@ class B2ATest(unittest.TestCase):
         # 1: variance
         # 2 - 8: quantiles (including min, max)
         affs[2:] = aff_features[0, 2:]
-        affs = 1. - affs
+        affs[2:] = 1. - affs[2:]
 
         offsets = np.array(offsets)
         stride = np.array([6, 6])
