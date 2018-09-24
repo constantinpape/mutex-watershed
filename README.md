@@ -1,3 +1,9 @@
+IMPORTANT!
+==============
+This repository is deprecated!
+If you are interested in using the Mutex Watershed, please use
+https://github.com/hci-unihd/mutex-watershed
+
 mutex-watershed
 ==============
 
